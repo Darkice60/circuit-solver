@@ -1,6 +1,10 @@
+module;
 #include <iostream>
-#include <vector>
-#include <string>
+
+import components;
+
+
+
 
 int main() {
 	
