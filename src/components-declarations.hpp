@@ -7,26 +7,27 @@ class Component
 {
 protected:
     // Attributes
-    std::string name;
-    std::string node1, node2;
+    std::string _name;
+    std::string _node1, _node2;
 
 public:
     Component(std::string name, std::string node1, std::string node2)
-        : name(name), node1(node1), node2(node2) {}
+        : _name(name), _node1(node1), _node2(node2) {
+    }
 
     std::string getName() const
     {
-        return name;
+        return _name;
     }
 
     std::vector<std::string> getNodes() const
     {
-        return {node1, node2};
+        return { _node1, _node2 };
     }
 
     void setName(std::string name)
     {
-        this->name = name;
+        this->_name = name;
     }
 
     void setNodes(std::vector<std::string> nodes)
@@ -35,8 +36,8 @@ public:
         {
             return;
         }
-        this->node1 = nodes[0];
-        this->node2 = nodes[1];
+        this->_node1 = nodes[0];
+        this->_node2 = nodes[1];
     }
 
     virtual ~Component() = default;
@@ -45,59 +46,62 @@ public:
 class Resistor : public Component
 {
 private:
-    double resistance;
+    double _resistance;
 
 public:
     Resistor(std::string name, std::string node1, std::string node2, double resistance)
-        : Component(name, node1, node2), resistance(resistance) {}
+        : Component(name, node1, node2), _resistance(resistance) {
+    }
 
     double getResistance() const
     {
-        return resistance;
+        return _resistance;
     }
 
     void setResistance(double resistance)
     {
-        this->resistance = resistance;
+        this->_resistance = resistance;
     }
 };
 
 class CurrentSource : public Component
 {
 private:
-    double current;
+    double _current;
 
 public:
     CurrentSource(std::string name, std::string node1, std::string node2, double current)
-        : Component(name, node1, node2), current(current) {}
+        : Component(name, node1, node2), _current(current) {
+    }
 
     double getCurrent() const
     {
-        return current;
+        return _current;
     }
 
     void setCurrent(double current)
     {
-        this->current = current;
+        this->_current = current;
     }
 };
 
 class VoltageSource : public Component
 {
 private:
-    double voltage;
+    double _voltage;
 
 public:
     VoltageSource(std::string name, std::string node1, std::string node2, double voltage)
-        : Component(name, node1, node2), voltage(voltage) {}
+        : Component(name, node1, node2), _voltage(voltage) {
+    }
 
     double getVoltage() const
     {
-        return voltage;
+        return _voltage;
     }
 
     void setVoltage(double voltage)
     {
-        this->voltage = voltage;
+        this->_voltage = voltage;
     }
 };
