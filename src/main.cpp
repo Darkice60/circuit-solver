@@ -6,12 +6,31 @@
 #include <cctype>
 #include <memory>
 #include <sstream>
+#include <unordered_map>
 
 #ifdef __INTELLISENSE__
 #include "components-declarations.hpp"
 #else
 import components;
 #endif
+
+std::unordered_map<std::string, int> findNodes(const std::vector<std::unique_ptr<Component>>& comps) {
+	std::unordered_map<std::string, int> nodes;
+	int i = 0;
+	for (const auto& comp : comps) {
+		for (const auto& node : comp->getNodes()) {
+			if (node == "0") {
+				continue;
+			}
+
+			if (!nodes.contains(node)) {
+				nodes[node] = i++;
+			}
+		}
+	}
+
+	return nodes;
+}
 
 std::unique_ptr<Component> createComp(const std::string& data) {
 	std::istringstream iss(data);
@@ -24,8 +43,7 @@ std::unique_ptr<Component> createComp(const std::string& data) {
 		std::exit(1);
 	}
 
-	char initialC = (char)tolower(data[0]);
-	// Component comp = nullptr;
+	char initialC = (char)tolower(name[0]);
 	if (initialC == 'r') {
 		return std::make_unique<Resistor>(name, node1, node2, value);
 	}
@@ -55,11 +73,20 @@ int main() {
 
 	while (std::getline(file, line)) {
 		comps.push_back(createComp(line));
-
 	}
+
+	auto nodes = findNodes(comps);
+
+
+
+	//test code
 
 	for (const auto& comp : comps) {
 		std::cout << comp->getName() << '\n';
+	}
+
+	for (const auto& [node, index] : nodes) {
+		std::cout << node << ": " << index << "\n";
 	}
 
 	return 0;
