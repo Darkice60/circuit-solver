@@ -14,6 +14,20 @@
 import components;
 #endif
 
+std::vector<std::vector<double>> constructMatrix(const std::vector<std::unique_ptr<Component>>& comps, const std::unordered_map<std::string, int>& nodes) {
+	int n = nodes.size();
+	int m = 0;
+	for (const auto& comp : comps) {
+		if (dynamic_cast<VoltageSource*>(comp.get())) {
+			m++;
+		}
+	}
+
+	int size = m + n;
+
+	std::vector<std::vector<double>> A(size, std::vector<double>(size, 0.0));
+}
+
 std::unordered_map<std::string, int> findNodes(const std::vector<std::unique_ptr<Component>>& comps) {
 	std::unordered_map<std::string, int> nodes;
 	int i = 0;
