@@ -7,6 +7,7 @@
 #include <memory>
 #include <sstream>
 #include <unordered_map>
+#include <tuple>
 
 #ifdef __INTELLISENSE__
 #include "components-declarations.hpp"
@@ -14,7 +15,13 @@
 import components;
 #endif
 
-std::vector<std::vector<double>> constructMatrix(const std::vector<std::unique_ptr<Component>>& comps, const std::unordered_map<std::string, int>& nodes) {
+struct System {
+	std::vector<std::vector<double>> A;
+	std::vector<double> x;
+	std::vector<double> b;
+};
+
+System constructMatrix(const std::vector<std::unique_ptr<Component>>& comps, const std::unordered_map<std::string, int>& nodes) {
 	int n = nodes.size();
 	int m = 0;
 	for (const auto& comp : comps) {
@@ -24,15 +31,58 @@ std::vector<std::vector<double>> constructMatrix(const std::vector<std::unique_p
 	}
 
 	int size = m + n;
-
+	int a, b;
 	std::vector<std::vector<double>> A(size, std::vector<double>(size, 0.0));
+	std::vector<double> x;
+	std::vector<double> B;
+
+	for (const auto& comp : comps) {
+		if (auto* resistor = dynamic_cast<Resistor*>(comp.get())) {
+			double g = 1.0 / resistor->getResistance();
+
+			auto [node1, node2] = resistor->getNodes();
+
+			if (node1 != "0") {
+				a = nodes.at(node1);
+				A[a][a] += g;
+			}
+
+			if (node2 != "0") {
+				b = nodes.at(node2);
+				A[b][b] += g;
+			}
+
+			if (node1 != "0" && node2 != "0") {
+				a = nodes.at(node1);
+				b = nodes.at(node2);
+				A[a][b] -= g;
+				A[b][a] -= g;
+			}
+		}
+		else if (auto* currentSource = dynamic_cast<CurrentSource*>(comp.get())) {
+			double current = currentSource->getCurrent();
+
+			auto [node1, node2] = currentSource->getNodes();
+
+			if (node1 != "0") {
+				a = nodes.at(node1);
+				B[a] -= current;
+			}
+
+			if (node2 != "0") {
+				b = nodes.at(node2);
+				B[b] += current;
+			}
+		}
+	}
 }
 
 std::unordered_map<std::string, int> findNodes(const std::vector<std::unique_ptr<Component>>& comps) {
 	std::unordered_map<std::string, int> nodes;
 	int i = 0;
 	for (const auto& comp : comps) {
-		for (const auto& node : comp->getNodes()) {
+		auto [node1, node2] = comp->getNodes();
+		for (const auto& node : { node1, node2 }) {
 			if (node == "0") {
 				continue;
 			}

@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <tuple>
 
 class Component
 {
@@ -20,9 +21,9 @@ public:
         return _name;
     }
 
-    std::vector<std::string> getNodes() const
+    std::tuple<std::string, std::string> getNodes() const
     {
-        return { _node1, _node2 };
+        return std::make_tuple(_node1, _node2);
     }
 
     void setName(std::string name)
