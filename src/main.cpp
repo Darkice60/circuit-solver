@@ -21,6 +21,10 @@ struct System {
 	std::vector<double> b;
 };
 
+std::vector<double> solve(System system) {
+
+}
+
 System constructMatrix(const std::vector<std::unique_ptr<Component>>& comps, const std::unordered_map<std::string, int>& nodes) {
 	int n = nodes.size();
 	int m = 0;
@@ -31,10 +35,11 @@ System constructMatrix(const std::vector<std::unique_ptr<Component>>& comps, con
 	}
 
 	int size = m + n;
-	int a, b;
+	int i1, i2;
+	int voltageIndex = n;
 	std::vector<std::vector<double>> A(size, std::vector<double>(size, 0.0));
-	std::vector<double> x;
-	std::vector<double> B;
+	std::vector<double> x(size, 0);
+	std::vector<double> b(size, 0);
 
 	for (const auto& comp : comps) {
 		if (auto* resistor = dynamic_cast<Resistor*>(comp.get())) {
@@ -43,20 +48,20 @@ System constructMatrix(const std::vector<std::unique_ptr<Component>>& comps, con
 			auto [node1, node2] = resistor->getNodes();
 
 			if (node1 != "0") {
-				a = nodes.at(node1);
-				A[a][a] += g;
+				i1 = nodes.at(node1);
+				A[i1][i1] += g;
 			}
 
 			if (node2 != "0") {
-				b = nodes.at(node2);
-				A[b][b] += g;
+				i2 = nodes.at(node2);
+				A[i2][i2] += g;
 			}
 
 			if (node1 != "0" && node2 != "0") {
-				a = nodes.at(node1);
-				b = nodes.at(node2);
-				A[a][b] -= g;
-				A[b][a] -= g;
+				i1 = nodes.at(node1);
+				i2 = nodes.at(node2);
+				A[i1][i2] -= g;
+				A[i2][i1] -= g;
 			}
 		}
 		else if (auto* currentSource = dynamic_cast<CurrentSource*>(comp.get())) {
@@ -65,16 +70,38 @@ System constructMatrix(const std::vector<std::unique_ptr<Component>>& comps, con
 			auto [node1, node2] = currentSource->getNodes();
 
 			if (node1 != "0") {
-				a = nodes.at(node1);
-				B[a] -= current;
+				i1 = nodes.at(node1);
+				b[i1] -= current;
 			}
 
 			if (node2 != "0") {
-				b = nodes.at(node2);
-				B[b] += current;
+				i2 = nodes.at(node2);
+				b[i2] += current;
 			}
 		}
+		else if (auto* voltageSource = dynamic_cast<VoltageSource*>(comp.get())) {
+			double voltage = voltageSource->getVoltage();
+
+			auto [node1, node2] = voltageSource->getNodes();
+
+			if (node1 != "0") {
+				i1 = nodes.at(node1);
+				A[i1][voltageIndex] += 1.0;
+				A[voltageIndex][i1] += 1.0;
+			}
+
+			if (node2 != "0") {
+				i2 = nodes.at(node2);
+				A[i2][voltageIndex] -= 1.0;
+				A[voltageIndex][i2] -= 1.0;
+			}
+
+			b[voltageIndex] += voltage;
+			voltageIndex++;
+		}
 	}
+
+	return System{ A, x, b };
 }
 
 std::unordered_map<std::string, int> findNodes(const std::vector<std::unique_ptr<Component>>& comps) {
@@ -141,7 +168,7 @@ int main() {
 
 	auto nodes = findNodes(comps);
 
-
+	System system = constructMatrix(comps, nodes);
 
 	//test code
 
