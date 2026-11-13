@@ -7,6 +7,7 @@
 #include <memory>
 #include <sstream>
 #include <unordered_map>
+#include <cmath>
 #include <tuple>
 
 #ifdef __INTELLISENSE__
@@ -21,8 +22,45 @@ struct System {
 	std::vector<double> b;
 };
 
-std::vector<double> solve(System system) {
+std::vector<double> solve(const System& system) {
+	const auto& A = system.A;
+	const auto& b = system.b;
 
+	int size = b.size();
+
+	std::vector<double> x(size, 0.0);
+
+	std::vector<std::vector<double>> augmented(size, std::vector<double>(size + 1, 0.0));
+	for (int i = 0; i < size; i++) {
+		for (int j = 0; j < size; j++) {
+			augmented[i][j] = A[i][j];
+		}
+		augmented[i][size] = b[i];
+	}
+
+	for (int i = 0; i < size; i++) {
+		int maxRow = i;
+		for (int j = i + 1; j < size; j++) {
+			if (std::abs(augmented[j][i]) > std::abs(augmented[maxRow][i])) {
+				maxRow = j;
+			}
+		}
+
+		if (maxRow != i) {
+			std::swap(augmented[i], augmented[maxRow]);
+		}
+
+		for (int k = i + 1; k < size; k++) {
+			double multiplier = augmented[k][i] / augmented[i][i];
+			for (int j = i; j <= size; j++) {
+				augmented[k][j] -= multiplier * augmented[maxRow][j];
+			}
+		}
+	}
+
+	for (int i = size - 1; i >= 0; i--) {
+
+	}
 }
 
 System constructMatrix(const std::vector<std::unique_ptr<Component>>& comps, const std::unordered_map<std::string, int>& nodes) {
