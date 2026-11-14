@@ -18,7 +18,6 @@ import components;
 
 struct System {
 	std::vector<std::vector<double>> A;
-	std::vector<double> x;
 	std::vector<double> b;
 };
 
@@ -53,14 +52,20 @@ std::vector<double> solve(const System& system) {
 		for (int k = i + 1; k < size; k++) {
 			double multiplier = augmented[k][i] / augmented[i][i];
 			for (int j = i; j <= size; j++) {
-				augmented[k][j] -= multiplier * augmented[maxRow][j];
+				augmented[k][j] -= multiplier * augmented[i][j];
 			}
 		}
 	}
 
 	for (int i = size - 1; i >= 0; i--) {
-
+		double sum = augmented[i][size];
+		for (int j = i + 1; j < size; j++) {
+			sum -= augmented[i][j] * x[j];
+		}
+		x[i] = sum / augmented[i][i];
 	}
+
+	return x;
 }
 
 System constructMatrix(const std::vector<std::unique_ptr<Component>>& comps, const std::unordered_map<std::string, int>& nodes) {
@@ -76,7 +81,6 @@ System constructMatrix(const std::vector<std::unique_ptr<Component>>& comps, con
 	int i1, i2;
 	int voltageIndex = n;
 	std::vector<std::vector<double>> A(size, std::vector<double>(size, 0.0));
-	std::vector<double> x(size, 0);
 	std::vector<double> b(size, 0);
 
 	for (const auto& comp : comps) {
@@ -139,7 +143,7 @@ System constructMatrix(const std::vector<std::unique_ptr<Component>>& comps, con
 		}
 	}
 
-	return System{ A, x, b };
+	return System{ A, b };
 }
 
 std::unordered_map<std::string, int> findNodes(const std::vector<std::unique_ptr<Component>>& comps) {
@@ -207,6 +211,12 @@ int main() {
 	auto nodes = findNodes(comps);
 
 	System system = constructMatrix(comps, nodes);
+
+	std::vector<double> x = solve(system);
+
+	for (const auto& sol : x) {
+		std::cout << sol << '\n';
+	}
 
 	//test code
 
