@@ -16,6 +16,10 @@
 import components;
 #endif
 
+double timeIncrement = 0.1;
+double timeStop = 0.5;
+
+
 struct System {
 	std::vector<std::vector<double>> A;
 	std::vector<double> b;
@@ -141,6 +145,9 @@ System constructMatrix(const std::vector<std::unique_ptr<Component>>& comps, con
 			b[voltageIndex] += voltage;
 			voltageIndex++;
 		}
+		else if (auto* capacitor = dynamic_cast<Capacitor*>(comp.get())) {
+
+		}
 	}
 
 	return System{ A, b };
@@ -186,6 +193,17 @@ std::unique_ptr<Component> createComp(const std::string& data) {
 	else if (initialC == 'v') {
 		return std::make_unique<VoltageSource>(name, node1, node2, value);
 	}
+	else if (initialC == 'c') {
+		return std::make_unique<Capacitor>(name, node1, node2, value);
+	}
+	else if (initialC == '.') {
+		timeIncrement = value;
+		return nullptr;
+	}
+	else if (initialC == ',') {
+		timeStop = value;
+		return nullptr;
+	}
 	else {
 		std::cerr << "Invalid component type" << std::endl;
 		std::exit(1);
@@ -205,6 +223,10 @@ int main() {
 	std::string line;
 
 	while (std::getline(file, line)) {
+		std::unique_ptr<Component> tempComp = createComp(line);
+		if (tempComp == nullptr) {
+			continue;
+		}
 		comps.push_back(createComp(line));
 	}
 

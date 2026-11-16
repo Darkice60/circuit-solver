@@ -106,3 +106,22 @@ public:
         this->_voltage = voltage;
     }
 };
+
+class Capacitor : public Component {
+private:
+    double _capacitance;
+public:
+    Capacitor(std::string name, std::string node1, std::string node2, double capacitance)
+        : Component(name, node1, node2), _capacitance(capacitance) {
+    }
+
+    double getCapacitance() const
+    {
+        return _capacitance;
+    }
+
+    void setCapacitance(double capacitance)
+    {
+        this->_capacitance = capacitance;
+    }
+};
