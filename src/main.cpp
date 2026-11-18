@@ -146,7 +146,30 @@ System constructMatrix(const std::vector<std::unique_ptr<Component>>& comps, con
 			voltageIndex++;
 		}
 		else if (auto* capacitor = dynamic_cast<Capacitor*>(comp.get())) {
+			double g = (capacitor->getCapacitance() / timeIncrement);
+			auto [node1, node2] = capacitor->getNodes();
 
+			double prevVolt = capacitor->getPrevVolt();
+			double iEq = g * prevVolt;
+
+			if (node1 != "0") {
+				i1 = nodes.at(node1);
+				A[i1][i1] += g;
+				b[i1] += iEq;
+			}
+
+			if (node2 != "0") {
+				i2 = nodes.at(node2);
+				A[i2][i2] += g;
+				b[i2] -= iEq;
+			}
+
+			if (node1 != "0" && node2 != "0") {
+				i1 = nodes.at(node1);
+				i2 = nodes.at(node2);
+				A[i1][i2] -= g;
+				A[i2][i1] -= g;
+			}
 		}
 	}
 
@@ -227,7 +250,7 @@ int main() {
 		if (tempComp == nullptr) {
 			continue;
 		}
-		comps.push_back(createComp(line));
+		comps.push_back(std::move(tempComp));
 	}
 
 	auto nodes = findNodes(comps);

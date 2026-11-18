@@ -110,6 +110,7 @@ public:
 class Capacitor : public Component {
 private:
     double _capacitance;
+    double _prevVolt;
 public:
     Capacitor(std::string name, std::string node1, std::string node2, double capacitance)
         : Component(name, node1, node2), _capacitance(capacitance) {
@@ -123,5 +124,15 @@ public:
     void setCapacitance(double capacitance)
     {
         this->_capacitance = capacitance;
+    }
+
+    double getPrevVolt() const
+    {
+        return _prevVolt;
+    }
+
+    void setPrevVolt(double prevVolt)
+    {
+        this->_prevVolt = prevVolt;
     }
 };
