@@ -110,7 +110,7 @@ public:
 class Capacitor : public Component {
 private:
     double _capacitance;
-    double _prevVolt;
+    double _prevVolt = 0.0;
 public:
     Capacitor(std::string name, std::string node1, std::string node2, double capacitance)
         : Component(name, node1, node2), _capacitance(capacitance) {

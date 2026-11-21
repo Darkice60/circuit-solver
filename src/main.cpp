@@ -72,6 +72,17 @@ std::vector<double> solve(const System& system) {
 	return x;
 }
 
+void updateCapacitors(const std::vector<std::unique_ptr<Component>>& comps, const std::unordered_map<std::string, int>& nodes, const std::vector<double>& x) {
+	for (const auto& comp : comps) {
+		if (auto* capacitor = dynamic_cast<Capacitor*>(comp.get())) {
+			auto [node1, node2] = capacitor->getNodes();
+			double v1 = (node1 == "0") ? 0.0 : x[nodes.at(node1)];
+			double v2 = (node2 == "0") ? 0.0 : x[nodes.at(node2)];
+			capacitor->setPrevVolt(v1 - v2);
+		}
+	}
+}
+
 System constructMatrix(const std::vector<std::unique_ptr<Component>>& comps, const std::unordered_map<std::string, int>& nodes) {
 	int n = nodes.size();
 	int m = 0;
@@ -255,22 +266,16 @@ int main() {
 
 	auto nodes = findNodes(comps);
 
-	System system = constructMatrix(comps, nodes);
+	for (double t = 0.0; t <= timeStop + 1e-12; t += timeIncrement) {
+		System system = constructMatrix(comps, nodes);
+		std::vector<double> x = solve(system);
+		std::cout << "t=" << t;
+		for (const auto& [node, index] : nodes) {
+			std::cout << " | V(" << node << ")=" << x[index];
+		}
+		std::cout << '\n';
 
-	std::vector<double> x = solve(system);
-
-	for (const auto& sol : x) {
-		std::cout << sol << '\n';
-	}
-
-	//test code
-
-	for (const auto& comp : comps) {
-		std::cout << comp->getName() << '\n';
-	}
-
-	for (const auto& [node, index] : nodes) {
-		std::cout << node << ": " << index << "\n";
+		updateCapacitors(comps, nodes, x);
 	}
 
 	return 0;
