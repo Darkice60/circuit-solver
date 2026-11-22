@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include <cmath>
 #include <tuple>
+#include <utility>
 
 #ifdef __INTELLISENSE__
 #include "components-declarations.hpp"
@@ -83,7 +84,7 @@ void updateCapacitors(const std::vector<std::unique_ptr<Component>>& comps, cons
 	}
 }
 
-System constructMatrix(const std::vector<std::unique_ptr<Component>>& comps, const std::unordered_map<std::string, int>& nodes) {
+System constructMatrix(const std::vector<std::unique_ptr<Component>>& comps, const std::unordered_map<std::string, int>& nodes, bool isDC = false) {
 	int n = nodes.size();
 	int m = 0;
 	for (const auto& comp : comps) {
@@ -157,6 +158,9 @@ System constructMatrix(const std::vector<std::unique_ptr<Component>>& comps, con
 			voltageIndex++;
 		}
 		else if (auto* capacitor = dynamic_cast<Capacitor*>(comp.get())) {
+			if (isDC) {
+				continue;
+			}
 			double g = (capacitor->getCapacitance() / timeIncrement);
 			auto [node1, node2] = capacitor->getNodes();
 
@@ -208,16 +212,33 @@ std::unordered_map<std::string, int> findNodes(const std::vector<std::unique_ptr
 
 std::unique_ptr<Component> createComp(const std::string& data) {
 	std::istringstream iss(data);
+	std::string name;
+	if (!(iss >> name)) {
+		return nullptr;
+	}
 
-	std::string name, node1, node2;
+	char initialC = (char)tolower(name[0]);
+
+	if (initialC == '*') {
+		return nullptr;
+	}
+
+	if (name == ".tran") {
+		if (!(iss >> timeIncrement >> timeStop)) {
+			std::cerr << "Invalid time formatting: " << data << '\n';
+			std::exit(1);
+		}
+		return nullptr;
+	}
+
 	double value;
-
-	if (!(iss >> name >> node1 >> node2 >> value)) {
+	std::string node1, node2;
+	if (!(iss >> node1 >> node2 >> value)) {
 		std::cerr << "Invalid component formatting: " << data << '\n';
 		std::exit(1);
 	}
 
-	char initialC = (char)tolower(name[0]);
+
 	if (initialC == 'r') {
 		return std::make_unique<Resistor>(name, node1, node2, value);
 	}
@@ -228,15 +249,12 @@ std::unique_ptr<Component> createComp(const std::string& data) {
 		return std::make_unique<VoltageSource>(name, node1, node2, value);
 	}
 	else if (initialC == 'c') {
-		return std::make_unique<Capacitor>(name, node1, node2, value);
-	}
-	else if (initialC == '.') {
-		timeIncrement = value;
-		return nullptr;
-	}
-	else if (initialC == ',') {
-		timeStop = value;
-		return nullptr;
+		auto capacitor = std::make_unique<Capacitor>(name, node1, node2, value);
+		double initialVoltage;
+		if (iss >> initialVoltage) {
+			capacitor->setPrevVolt(initialVoltage);
+		}
+		return capacitor;
 	}
 	else {
 		std::cerr << "Invalid component type" << std::endl;
@@ -265,6 +283,8 @@ int main() {
 	}
 
 	auto nodes = findNodes(comps);
+
+	//fix t = 0 bug
 
 	for (double t = 0.0; t <= timeStop + 1e-12; t += timeIncrement) {
 		System system = constructMatrix(comps, nodes);
