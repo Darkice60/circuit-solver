@@ -19,7 +19,7 @@ import components;
 
 double timeIncrement = 0.1;
 double timeStop = 0.5;
-
+bool UIC = false;
 
 struct System {
 	std::vector<std::vector<double>> A;
@@ -228,6 +228,10 @@ std::unique_ptr<Component> createComp(const std::string& data) {
 			std::cerr << "Invalid time formatting: " << data << '\n';
 			std::exit(1);
 		}
+		std::string uicFlag;
+		if (iss >> uicFlag && uicFlag == "uic") {
+			UIC = true;
+		}
 		return nullptr;
 	}
 
@@ -284,9 +288,18 @@ int main() {
 
 	auto nodes = findNodes(comps);
 
-	//fix t = 0 bug
+	if (!UIC) {
+		System dcSystem = constructMatrix(comps, nodes, true);
+		std::vector<double> x = solve(dcSystem);
+		std::cout << "t=0.0";
+		for (const auto& [node, index] : nodes) {
+			std::cout << " | V(" << node << ")=" << x[index];
+		}
+		std::cout << '\n';
+		updateCapacitors(comps, nodes, x);
+	}
 
-	for (double t = 0.0; t <= timeStop + 1e-12; t += timeIncrement) {
+	for (double t = timeIncrement; t <= timeStop + 1e-12; t += timeIncrement) {
 		System system = constructMatrix(comps, nodes);
 		std::vector<double> x = solve(system);
 		std::cout << "t=" << t;
