@@ -260,6 +260,14 @@ std::unique_ptr<Component> createComp(const std::string& data) {
 		}
 		return capacitor;
 	}
+	else if (initialC == 'l') {
+		auto inductor = std::make_unique<Inductor>(name, node1, node2, value);
+		double initialCurrent;
+		if (iss >> initialCurrent) {
+			inductor->setPrevCurrent(initialCurrent);
+		}
+		return inductor;
+	}
 	else {
 		std::cerr << "Invalid component type" << std::endl;
 		std::exit(1);

@@ -136,3 +136,33 @@ public:
         this->_prevVolt = prevVolt;
     }
 };
+
+class Inductor : public Component {
+private:
+    double _inductance;
+    double _prevCurrent = 0.0;
+public:
+    Inductor(std::string name, std::string node1, std::string node2, double inductance)
+        : Component(name, node1, node2), _inductance(inductance) {
+    }
+
+    double getInductance() const
+    {
+        return _inductance;
+    }
+
+    void setInductance(double inductance)
+    {
+        this->_inductance = inductance;
+    }
+
+    double getPrevCurrent() const
+    {
+        return _prevCurrent;
+    }
+
+    void setPrevCurrent(double prevCurrent)
+    {
+        this->_prevCurrent = prevCurrent;
+    }
+};
