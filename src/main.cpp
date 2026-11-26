@@ -84,18 +84,31 @@ void updateCapacitors(const std::vector<std::unique_ptr<Component>>& comps, cons
 	}
 }
 
+void updateInductors(const std::vector<std::unique_ptr<Component>>& comps, const std::unordered_map<std::string, int>& nodes, const std::vector<double>& x) {
+	int branchIndex = nodes.size();
+	for (const auto& comp : comps) {
+		if (dynamic_cast<VoltageSource*>(comp.get())) {
+			branchIndex++;
+		}
+		else if (auto* inductor = dynamic_cast<Inductor*>(comp.get())) {
+			inductor->setPrevCurrent(x[branchIndex]);
+			branchIndex++;
+		}
+	}
+}
+
 System constructMatrix(const std::vector<std::unique_ptr<Component>>& comps, const std::unordered_map<std::string, int>& nodes, bool isDC = false) {
 	int n = nodes.size();
 	int m = 0;
 	for (const auto& comp : comps) {
-		if (dynamic_cast<VoltageSource*>(comp.get())) {
+		if (dynamic_cast<VoltageSource*>(comp.get()) || dynamic_cast<Inductor*>(comp.get())) {
 			m++;
 		}
 	}
 
 	int size = m + n;
 	int i1, i2;
-	int voltageIndex = n;
+	int branchIndex = n;
 	std::vector<std::vector<double>> A(size, std::vector<double>(size, 0.0));
 	std::vector<double> b(size, 0);
 
@@ -144,18 +157,18 @@ System constructMatrix(const std::vector<std::unique_ptr<Component>>& comps, con
 
 			if (node1 != "0") {
 				i1 = nodes.at(node1);
-				A[i1][voltageIndex] += 1.0;
-				A[voltageIndex][i1] += 1.0;
+				A[i1][branchIndex] += 1.0;
+				A[branchIndex][i1] += 1.0;
 			}
 
 			if (node2 != "0") {
 				i2 = nodes.at(node2);
-				A[i2][voltageIndex] -= 1.0;
-				A[voltageIndex][i2] -= 1.0;
+				A[i2][branchIndex] -= 1.0;
+				A[branchIndex][i2] -= 1.0;
 			}
 
-			b[voltageIndex] += voltage;
-			voltageIndex++;
+			b[branchIndex] += voltage;
+			branchIndex++;
 		}
 		else if (auto* capacitor = dynamic_cast<Capacitor*>(comp.get())) {
 			if (isDC) {
@@ -185,6 +198,28 @@ System constructMatrix(const std::vector<std::unique_ptr<Component>>& comps, con
 				A[i1][i2] -= g;
 				A[i2][i1] -= g;
 			}
+		}
+		else if (auto* inductor = dynamic_cast<Inductor*>(comp.get())) {
+			auto [node1, node2] = inductor->getNodes();
+
+			if (node1 != "0") {
+				i1 = nodes.at(node1);
+				A[i1][branchIndex] += 1.0;
+				A[branchIndex][i1] += 1.0;
+			}
+
+			if (node2 != "0") {
+				i2 = nodes.at(node2);
+				A[i2][branchIndex] -= 1.0;
+				A[branchIndex][i2] -= 1.0;
+			}
+
+			if (!isDC) {
+				double rEq = (inductor->getInductance() / timeIncrement);
+				A[branchIndex][branchIndex] -= rEq;
+				b[branchIndex] -= rEq * inductor->getPrevCurrent();
+			}
+			branchIndex++;
 		}
 	}
 
@@ -305,6 +340,7 @@ int main() {
 		}
 		std::cout << '\n';
 		updateCapacitors(comps, nodes, x);
+		updateInductors(comps, nodes, x);
 	}
 
 	for (double t = timeIncrement; t <= timeStop + 1e-12; t += timeIncrement) {
@@ -317,6 +353,7 @@ int main() {
 		std::cout << '\n';
 
 		updateCapacitors(comps, nodes, x);
+		updateInductors(comps, nodes, x);
 	}
 
 	return 0;
