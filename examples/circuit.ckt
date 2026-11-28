@@ -1,5 +1,6 @@
-V1 n1 0 20
+* Underdamped RLC Step Response (wn = 100 rad/s, zeta = 0.1)
+V1 n1 0 10
 R1 n1 n2 2
-C1 n2 n3 0.0001
-R2 n3 0 4
-.tran 0.0005 0.005 uic
+L1 n2 n3 0.1 0
+C1 n3 0 0.001 0
+.tran 0.002 0.25 uic

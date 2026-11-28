@@ -310,18 +310,24 @@ std::unique_ptr<Component> createComp(const std::string& data) {
 }
 
 int main() {
+	//read from circuit file
 	std::ifstream file("examples/circuit.ckt");
 
+	//if the file cant be opened
 	if (!file.is_open()) {
 		std::cerr << "Error, file not opened" << std::endl;
 		return 1;
 	}
 
+	//declare component arrya
 	std::vector<std::unique_ptr<Component>> comps;
 
+	//decalre strring to parse file lines
 	std::string line;
 
+	//while the file has lines
 	while (std::getline(file, line)) {
+		//add the liens data to the componenet vector
 		std::unique_ptr<Component> tempComp = createComp(line);
 		if (tempComp == nullptr) {
 			continue;
